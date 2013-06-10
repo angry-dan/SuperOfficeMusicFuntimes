@@ -17,7 +17,7 @@ var Itunes = require('./lib/itunes.js'), itunes = new Itunes();
 
 io.sockets.on('connection', function (socket) {
   itunes.on('refresh', function(info) {
-    console.log(itunes);
+    console.log('refresh:', itunes);
     socket.emit('refresh', info);
   });
 });
@@ -25,7 +25,8 @@ io.sockets.on('connection', function (socket) {
 // A simple REST request path: show currently playing track.
 server.get('app/now-playing', function(req, res, next) {
   itunes.nowPlaying(function(info) {
-    res.send(info);
+
+    res.send(200, info);
   });
 });
 
