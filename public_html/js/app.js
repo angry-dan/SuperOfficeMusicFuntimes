@@ -6,13 +6,15 @@
  */
 
 
-//jQuery(function($){
-//  $.get('/app/now-playing', function(response) {
-//    console.log(response);
-//  });
-//});
+console.log('starting...');
+
+jQuery(function($){
+  $.get('/app/now-playing', function(response) {
+    console.log('now playing: ', response);
+  });
+});
 
 var socket = io.connect();
 socket.on('refresh', function (data) {
-  console.log(data);
+  console.log('refresh: ', data);
 });
