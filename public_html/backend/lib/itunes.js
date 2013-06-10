@@ -8,22 +8,26 @@ var util = require("util");
 var events = require("events");
 
 function Itunes() {
+  // Parent constructor
   events.EventEmitter.call(this);
+
+  // Wait for refreshes.
   startMonitoring(this);
 }
+// class Itunes extends EventEmitter
 util.inherits(Itunes, events.EventEmitter);
 
 Itunes.prototype.currentTrackId = null;
 Itunes.prototype.votes = 0;
 
 Itunes.prototype.nowPlaying = function(callback) {
-  applescript.execString('tell application "iTunes" to get name of current track', function(err, rtn) {
-    if (err) {
-      throw err;
-    }
-    callback(rtn);
+  apiWrapperLong(
+'tell current track\n\
+  set export to {name:name, album:album, artist:artist}\n\
+end tell', function(name) {
+    callback(name);
   });
-}
+};
 
 Itunes.prototype.voteDown = function() {
   // Vote down the current track. We will store a count of votes against the
@@ -31,43 +35,35 @@ Itunes.prototype.voteDown = function() {
   // track call. That call will emit a refresh event.
   this.votes ++;
   if (this.votes > 3) {
-    this.next()
+    this.next();
   }
-}
+};
 
 Itunes.prototype.refresh = function() {
-  this.nowPlaying(function(info){
-    this.emit('refresh', info);
+  var itunes = this;
+  this.nowPlaying(function(name){
+    itunes.emit('refresh', name);
   });
-}
+};
 
 /**
  *
  * @param Itunes itunes
  */
 function startMonitoring(itunes) {
-
-
-  updateCurrentTrack();
-
-
-  // Every second we ask iTunes what the current track is, and if it has changed
-  // we let our people know.
-  // We do this in case an external entity tries to mess around with things.
-  var currentId;
+  updateCurrentTrack(itunes);
   setInterval(function() {
-    // Get ID of the current track.
-    // if currentId && currentId != newId emit event.
+    updateCurrentTrack(itunes);
   }, 1000);
 }
 
 function updateCurrentTrack(itunes) {
   apiWrapper('get id of current track', function(id) {
     var previousId = itunes.currentTrackId;
-    if (itunes.currentTrackId && itunes.currentTrackId !== id) {
+    itunes.currentTrackId = id;
+    if (previousId && previousId !== id) {
       itunes.refresh();
     }
-    itunes.currentTrackId = id;
   });
 }
 
@@ -80,4 +76,24 @@ function apiWrapper(command, callback) {
   });
 }
 
+function apiWrapperLong(command, callback) {
+  applescript.execString('tell application "iTunes"\n' + command + '\nend tell', function(err, rtn) {
+    if (err) {
+      throw err;
+    }
+    callback(rtn);
+  });
+}
+
+
 module.exports = Itunes;
+
+
+/*
+ * tell application "iTunes"
+	tell current track
+		set exportTrack to {name:name, album:album, artist:artist, time:time}
+	end tell
+	set export to {track:exportTrack, position:player position, state:player state}
+end tell
+ */
