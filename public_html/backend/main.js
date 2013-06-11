@@ -9,15 +9,12 @@
 var restify = require('restify');
 var server = restify.createServer();
 
-var io = require('socket.io').listen(server);
-
 var Itunes = require('./lib/itunes.js'), itunes = new Itunes();
 
-
+var io = require('socket.io').listen(server, {log: false});
 
 io.sockets.on('connection', function (socket) {
   itunes.on('refresh', function(info) {
-    console.log('refresh:', itunes);
     socket.emit('refresh', info);
   });
 });
