@@ -10,20 +10,16 @@
     <script type="text/javascript" src="/js/libs/jquery-1.9.0/jquery.min.js"></script>
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/js/app.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
   </head>
   <body>
-    <p>This file is served over port 80 via something lightweight like nginx.<br />
-    Onlt static content is served over 80, node runs on some other host
-    port/configuration.</p>
-
     <div id="application">
-
       <div class="now-playing">
         <div class="art"></div>
         <div class="track-name"></div>
         <div class="artist"></div>
         <div class="album"></div>
-        <div class="progress"></div>
+        <div class="progress"><span class="indicator"></span></div>
       </div>
 
       <div class="vote">
