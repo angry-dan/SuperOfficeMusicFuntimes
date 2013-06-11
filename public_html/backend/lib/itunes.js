@@ -18,14 +18,24 @@ function Itunes() {
 util.inherits(Itunes, events.EventEmitter);
 
 Itunes.prototype.currentTrackId = null;
+Itunes.prototype.playerState = null;
 Itunes.prototype.votes = 0;
 
 Itunes.prototype.nowPlaying = function(callback) {
   apiWrapperLong(
 'tell current track\n\
-  set export to {name:name, album:album, artist:artist}\n\
-end tell', function(name) {
-    callback(name);
+		set exportTrack to {name:name, album:album, artist:artist, time:time, art: ""}\n\
+    if (count of artwork) > 0 then	\n\
+      set art of exportTrack to data of artwork 1\n\
+    end if\n\
+  end tell\n\
+	set export to {track:exportTrack, position:player position, state:player state}', function(data) {
+
+    data.length = hmsToSeconds(data.track.time);
+    if (data.track.art) {
+      data.track.art = data.track.art.toString('base64');
+    }
+    callback(data);
   });
 };
 
@@ -58,10 +68,18 @@ function startMonitoring(itunes) {
 }
 
 function updateCurrentTrack(itunes) {
-  apiWrapper('get id of current track', function(id) {
+  apiWrapper('get {id:id of current track, state:player state}', function(info) {
+    if (!info) {
+      return; // Who knows why this happens?
+    }
+    // TODO this function get's called at least every second.
+    // if the player position has moved by more than 2 seconds then we are out
+    // of sync with the iTunes player position and we should refresh our clients.
     var previousId = itunes.currentTrackId;
-    itunes.currentTrackId = id;
-    if (previousId && previousId !== id) {
+    var previousPlayerState = itunes.playerState;
+    itunes.currentTrackId = info.id;
+    itunes.playerState = info.state;
+    if ((previousId && previousId !== info.id) || (previousPlayerState && previousPlayerState !== info.state)) {
       itunes.refresh();
     }
   });
@@ -85,15 +103,17 @@ function apiWrapperLong(command, callback) {
   });
 }
 
+function hmsToSeconds(str) {
+  //http://stackoverflow.com/questions/9640266/convert-hhmmss-string-to-seconds-only-in-javascript
+    var p = str.split(':'),
+        s = 0, m = 1;
+
+    while (p.length > 0) {
+        s += m * parseInt(p.pop(), 10);
+        m *= 60;
+    }
+
+    return s;
+}
 
 module.exports = Itunes;
-
-
-/*
- * tell application "iTunes"
-	tell current track
-		set exportTrack to {name:name, album:album, artist:artist, time:time}
-	end tell
-	set export to {track:exportTrack, position:player position, state:player state}
-end tell
- */
